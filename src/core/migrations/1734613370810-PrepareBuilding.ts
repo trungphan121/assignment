@@ -2,7 +2,6 @@ import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 
 export class PrepareBuilding1734613370810 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Create the buildings table
     await queryRunner.createTable(
       new Table({
         name: 'buildings',

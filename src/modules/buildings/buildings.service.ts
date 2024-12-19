@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Building } from "@modules/buildings/buildings.entity";
-import { Repository, TreeRepository } from "typeorm";
+import { Repository } from "typeorm";
 import { CreateBuildingDto } from "@modules/buildings/dto/create-building.dto";
 import { UpdateBuildingDto } from "@modules/buildings/dto/update-building.dto";
 
@@ -24,35 +24,43 @@ export class BuildingsService {
       }
     }
 
-    const createdBuilding = this.buildingRepository.create({
-      ...data,
-      parent
-    });
+    try {
+      const createdBuilding = this.buildingRepository.create({
+        ...data,
+        parent
+      });
 
-    return this.buildingRepository.save(createdBuilding);
+      return this.buildingRepository.save(createdBuilding);
+    } catch (e) {
+      throw new BadRequestException(e);
+    }
 
   }
 
   async findAll(): Promise<Building[]> {
-    const buildings = await this.buildingRepository
-      .createQueryBuilder('building')
-      .leftJoinAndSelect('building.children', 'children')
-      .leftJoinAndSelect('building.parent', 'parent')
-      .select([
-        'building.id',
-        'building.building',
-        'building.name',
-        'building.locationNumber',
-        'building.area',
-        'parent.id',
-        'children.id',
-        'children.name',
-        'children.locationNumber',
-        'children.area',
-      ])
-      .getMany();
+    try {
+      const buildings = await this.buildingRepository
+        .createQueryBuilder("building")
+        .leftJoinAndSelect("building.children", "children")
+        .leftJoinAndSelect("building.parent", "parent")
+        .select([
+          "building.id",
+          "building.building",
+          "building.name",
+          "building.locationNumber",
+          "building.area",
+          "parent.id",
+          "children.id",
+          "children.name",
+          "children.locationNumber",
+          "children.area"
+        ])
+        .getMany();
 
-    return buildings;
+      return buildings;
+    } catch (e) {
+      throw new BadRequestException(e);
+    }
   }
 
   async findOne(id: string): Promise<Building> {
@@ -62,7 +70,7 @@ export class BuildingsService {
     });
 
     if (!building) {
-      throw new NotFoundException(`Location with id ${id} not found`);
+      throw new NotFoundException(`Building with id ${id} not found`);
     }
 
     return building;
@@ -70,6 +78,9 @@ export class BuildingsService {
 
   async update(id: string, updateDto: UpdateBuildingDto): Promise<Building> {
     const building = await this.findOne(id);
+    if (!building) {
+      throw new NotFoundException(`Building with id ${id} not found`);
+    }
 
     if (updateDto.parentId) {
       const parent = await this.buildingRepository.findOne({
@@ -77,18 +88,25 @@ export class BuildingsService {
       });
 
       if (!parent) {
-        throw new NotFoundException(`Parent with id ${updateDto.parentId} not found`);
+        throw new NotFoundException(`Parent ${updateDto.parentId} not found`);
       }
 
       building.parent = parent;
     }
 
-    Object.assign(building, updateDto);
-    return this.buildingRepository.save(building);
+    try {
+      Object.assign(building, updateDto);
+      return this.buildingRepository.save(building);
+    } catch (e) {
+      throw new BadRequestException(e);
+    }
   }
 
   async remove(id: string): Promise<void> {
-    const location = await this.findOne(id);
-    await this.buildingRepository.remove(location);
+    const building = await this.findOne(id);
+    if (!building) {
+      throw new NotFoundException(`Building with id ${id} not found`);
+    }
+    await this.buildingRepository.remove(building);
   }
 }

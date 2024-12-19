@@ -20,7 +20,6 @@ async function runMigrations() {
 }
 
 async function bootstrap() {
-  // Run migrations before starting the application
   await runMigrations();
 
   const app = await NestFactory.create(AppModule);
