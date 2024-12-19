@@ -1,0 +1,8 @@
+export const ENV_CONST = {
+  DB_USERNAME: 'DB_USERNAME',
+  DB_PASSWORD: 'DB_PASSWORD',
+  DB_HOST: 'DB_HOST',
+  DB_PORT: 'DB_PORT',
+  DB_NAME: 'DB_NAME',
+  SSL_MODE: 'SSL_MODE',
+};
