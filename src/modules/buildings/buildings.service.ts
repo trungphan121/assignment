@@ -77,6 +77,13 @@ export class BuildingsService {
   }
 
   async update(id: string, updateDto: UpdateBuildingDto): Promise<Building> {
+
+    // A la parent cua B, B la parent cua C, C la parent cua D
+
+    // b have id : 2, parent id: 1
+    // a have id : 1
+    // input: {id: 1, parent id: 2}
+
     const building = await this.findOne(id);
     if (!building) {
       throw new NotFoundException(`Building with id ${id} not found`);
@@ -89,6 +96,37 @@ export class BuildingsService {
 
       if (!parent) {
         throw new NotFoundException(`Parent ${updateDto.parentId} not found`);
+      }
+
+      // input: {id: 1, parent id: 2}
+      // loop 1 b.id: 2, a.id: 1 -> continue find parent b
+      // loop 2: a.id: 1, a.id: 1 -> wrong tree -> exception
+
+      // input: {id: 1, parent id: 3}
+      // loop 1 c.id: 3, a.id: 1 -> continue find parent c
+      // loop 2: b.id: 2, a.id: 1 -> continue find parent b
+      // loop 3: a.id: 1, a.id: 1 -> wrong tree -> exception
+
+      // input: {id: 2, parent id: 1}
+      // loop 1: a.id: 1, b.id: 2 -> continue update
+
+      // input: {id: 3 parent id: 2}
+      // loop 1: b.id: 2, b.id: 3 -> continue find parent b
+      // loop 2: a.id: 1, b.id: 3 -> continue update
+
+      let currentParent = parent;
+      while (currentParent) {
+        if (currentParent.id === building.id) {
+          throw new BadRequestException(`Cannot update parent with id ${updateDto.parentId}`);
+        }
+
+        if (!currentParent.parent) {
+          break;
+        }
+
+        currentParent = await this.buildingRepository.findOne({
+          where: { id: currentParent.parent.id },
+        });
       }
 
       building.parent = parent;
